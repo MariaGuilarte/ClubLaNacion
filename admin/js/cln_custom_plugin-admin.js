@@ -1,8 +1,29 @@
 (function( $ ) {
 	'use strict';
 
+	$( function(){
+		console.log("Just load");
+
+		var $from = $('.cln-csv-date-from'),
+				$to   = $('.cln-csv-date-to');
+
+		$from.datepicker({
+			maxDate: '0',
+			dateFormat: 'dd-mm-yy',
+			onSelect : function(date){
+				console.log( date );
+				$to.datepicker("option", "minDate", date);
+			}
+		}).datepicker("setDate", new Date());
+
+		$to.datepicker({
+			maxDate: '0',
+			dateFormat: 'dd-mm-yy'
+		}).datepicker("setDate", new Date());;
+
+	});
 	/**
-	 * All of the code for your admin-facing JavaScript source
+	 * All of the code for your public-facing JavaScript source
 	 * should reside in this file.
 	 *
 	 * Note: It has been assumed you will write jQuery code here, so the

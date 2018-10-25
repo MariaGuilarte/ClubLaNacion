@@ -1,6 +1,12 @@
 (function( $ ) {
 	'use strict';
 
+	$( function(){
+		console.log("Just load");
+		$('.cln-csv-date-from').datepicker({
+			maxDate: '0',
+		});
+	});
 	/**
 	 * All of the code for your public-facing JavaScript source
 	 * should reside in this file.

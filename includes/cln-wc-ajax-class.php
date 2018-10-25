@@ -127,9 +127,11 @@ class Custom_WC_AJAX extends WC_AJAX {
 
       		if( isset( $res->RTA ) && $res->RTA == 0 ){
             WC()->session->set('is_cln_member', 1);
+            WC()->session->set('cln_code', $_POST['cln_code']);
     				wc_add_notice( 'Se aplicó descuento para miembro del CLN', 'success');
           }else{
             WC()->session->set('is_cln_member', 0);
+            WC()->session->set('cln_code', '');
             wc_add_notice( 'La credencial no pertenece a ningún miembro del CLN', 'error' );
           }
         }
