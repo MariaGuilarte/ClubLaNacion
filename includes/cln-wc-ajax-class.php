@@ -7,7 +7,6 @@ class Custom_WC_AJAX extends WC_AJAX {
         self::add_ajax_events();
     }
 
-
     public static function get_endpoint( $request = '' ) {
         return esc_url_raw( add_query_arg( 'wc-ajax', $request, remove_query_arg( array( 'remove_item', 'add-to-cart', 'added-to-cart' ) ) ) );
     }
@@ -94,14 +93,26 @@ class Custom_WC_AJAX extends WC_AJAX {
     public static function cln_apply_coupon() {
       check_ajax_referer( 'apply-coupon', 'security' );
       if ( ! empty( $_POST['coupon_code'] ) ) {
-        $coupon       = new WC_Coupon( $_POST['coupon_code'] );
-        $discount     = WC()->cart->subtotal * $coupon->get_amount() * .01;
-        $cln_discount = WC()->cart->subtotal * get_option("cln_rate") * .01;
+        $coupon        = new WC_Coupon( $_POST['coupon_code'] );
+        $coupon_type   = $coupon->get_discount_type();
 
-        // If CLN discount is greater
-        if( $cln_discount > $discount ){
-          wc_add_notice( "Ya existe un descuento mayor aplicado", 'error' );
-        }else{
+        // Según el tipo de cupón
+        switch ($coupon_type) {
+          case 'percent':
+            $discount = WC()->cart->subtotal * $coupon->get_amount() * .01;
+          break;
+          case 'fixed_cart':
+            $discount = $coupon->get_amount();
+          break;
+        }
+
+        $is_cln_member = WC()->session->get("is_cln_member");
+        $cln_discount  = WC()->cart->subtotal * get_option("cln_rate") * .01;
+
+        // Si el descuento del CLN es superior
+        if( $is_cln_member && ( $cln_discount > $discount ) ){
+          wc_add_notice("Ya existe un mejor descuento aplicado ", 'error');
+        }else{ // Remplaza el descuento
           WC()->session->set("is_cln_member", 0);
           WC()->session->set("cln_code", '');
           WC()->cart->add_discount( sanitize_text_field( wp_unslash( $_POST['coupon_code'] ) ) );
@@ -142,11 +153,11 @@ class Custom_WC_AJAX extends WC_AJAX {
       		if( isset( $res->RTA ) && $res->RTA == 0 ){
             WC()->session->set('is_cln_member', 1);
             WC()->session->set('cln_code', $_POST['cln_code']);
-    				wc_add_notice( 'Se aplicó descuento para miembro del CLN', 'success');
+    				wc_add_notice( 'Se aplicó descuento para miembro del Club de la Nación', 'success');
           }else{
             WC()->session->set('is_cln_member', 0);
             WC()->session->set('cln_code', '');
-            wc_add_notice( 'La credencial no pertenece a ningún miembro del CLN', 'error' );
+            wc_add_notice( 'La credencial no pertenece a ningún miembro del Club de la Nación', 'error' );
           }
         }
   		}else{
