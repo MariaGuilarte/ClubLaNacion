@@ -149,9 +149,11 @@ function cln_enqueue_admin_scripts(){
 }
 
 // Insert the CLN form below the WooCommerce Cart Table
-add_action('woocommerce_cart_coupon', 'include_cln_form_group');
-function include_cln_form_group(){
-  include( plugin_dir_path( __FILE__ ) . 'includes/cln-form-group.php');
+if( get_option("cln_user") && get_option("cln_token") ){
+	add_action('woocommerce_cart_coupon', 'include_cln_form_group');
+	function include_cln_form_group(){
+	  include( plugin_dir_path( __FILE__ ) . 'includes/cln-form-group.php');
+	}
 }
 
 // Set the CLN discount if session is_cln_member is set to 1

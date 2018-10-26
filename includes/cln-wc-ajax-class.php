@@ -52,7 +52,8 @@ class Custom_WC_AJAX extends WC_AJAX {
         // woocommerce_EVENT => nopriv
         $ajax_events = array(
             'apply_cln' => true,
-            'cln_apply_coupon' => true
+            'cln_apply_coupon' => true,
+            'remove_cln' => true
         );
         foreach ( $ajax_events as $ajax_event => $nopriv ) {
             add_action( 'wp_ajax_woocommerce_' . $ajax_event, array( __CLASS__, $ajax_event ) );
@@ -89,6 +90,15 @@ class Custom_WC_AJAX extends WC_AJAX {
     }
     /**
      */
+
+     public static function remove_cln() {
+       WC()->session->set("is_cln_member", 0);
+       WC()->session->set("cln_code", '');
+       wc_add_notice( "Se ha removido el descuento por membresia del Club de la Nación", 'success' );
+
+       wc_print_notices();
+       wp_die();
+     }
 
     public static function cln_apply_coupon() {
       check_ajax_referer( 'apply-coupon', 'security' );
@@ -136,8 +146,11 @@ class Custom_WC_AJAX extends WC_AJAX {
   				wc_add_notice("Ya existe un mejor descuento por cupón aplicado ", 'error');
   			}else{
           WC()->cart->remove_coupons();
+          $user  = get_option("cln_user");
+          $token = get_option("cln_token");
+
           $ch = curl_init();
-      		curl_setopt($ch, CURLOPT_URL, "https://sws.lanacion.com.ar/WCFUsuario/Usuario.svc/ObtenerUsuarioClub?nroCredencial=" . $_POST['cln_code'] . "&usr=RutaCacao&tkn=4bd7de26-2772-413c-abb4-e5de16fd66e2");
+      		curl_setopt($ch, CURLOPT_URL, "https://sws.lanacion.com.ar/WCFUsuario/Usuario.svc/ObtenerUsuarioClub?nroCredencial=" . $_POST['cln_code'] . "&usr=" . $user . "&tkn=" . $token);
       		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
       		curl_setopt($ch, CURLOPT_HTTPHEADER, Array("Content-Type: application/xml"));
 
@@ -157,7 +170,8 @@ class Custom_WC_AJAX extends WC_AJAX {
           }else{
             WC()->session->set('is_cln_member', 0);
             WC()->session->set('cln_code', '');
-            wc_add_notice( 'La credencial no pertenece a ningún miembro del Club de la Nación', 'error' );
+            $message = isset( $res->RTA ) ? 'La credencial no pertenece a ningún miembro del Club de la Nación' : "No hay conexión con servicios del Club de la Nación";
+            wc_add_notice( $message, 'error' );
           }
         }
   		}else{
