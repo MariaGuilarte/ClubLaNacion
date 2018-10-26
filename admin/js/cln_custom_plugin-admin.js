@@ -9,7 +9,7 @@
 
 		$from.datepicker({
 			maxDate: '0',
-			dateFormat: 'dd-mm-yy',
+			dateFormat: 'yy-mm-dd',
 			onSelect : function(date){
 				console.log( date );
 				$to.datepicker("option", "minDate", date);
@@ -18,7 +18,7 @@
 
 		$to.datepicker({
 			maxDate: '0',
-			dateFormat: 'dd-mm-yy'
+			dateFormat: 'yy-mm-dd'
 		}).datepicker("setDate", new Date());;
 
 	});

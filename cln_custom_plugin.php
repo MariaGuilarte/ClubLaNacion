@@ -1,5 +1,7 @@
 <?php
-
+require 'vendor/autoload.php';
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 /**
  * The plugin bootstrap file
  *
@@ -87,6 +89,9 @@ run_cln_custom_plugin();
 global $cln_db_version;
 $cln_db_version = '1.0';
 
+register_activation_hook (__FILE__, 'cln_create_db_table');
+register_activation_hook (__FILE__, 'cln_start');
+
 // Create DB table for storing the log
 function cln_create_db_table(){
   require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
@@ -115,9 +120,6 @@ function cln_create_db_table(){
     add_option( 'cln_rate', 20 );
   }
 }
-
-register_activation_hook (__FILE__, 'cln_create_db_table');
-register_activation_hook (__FILE__, 'cln_start');
 
 add_action('woocommerce_loaded', 'cln_start');
 function cln_start(){
@@ -173,7 +175,7 @@ function create_order_csv( $order ) {
 			$date_str = $date->date("Y-m-d");
 
 			$wpdb->insert(
-				"wp_cln_discount_register",
+				$table_name,
 				[
 					"nombrecomercio" => $order->billing_first_name,
 					"fecha" => $date_str,
@@ -189,30 +191,41 @@ function create_order_csv( $order ) {
 		}
 }
 
+add_action('woocommerce_thankyou', 'test_order_data');
+function test_order_data($order_id){
+	global $wpdb;
+	$order = wc_get_order( $order_id );
+	$table = $wpdb->prefix . "cln_discount_register";
 
-add_action('woocommerce_checkout_create_order', 'export_csv');
-// add_action('woocommerce_thankyou', 'test_order_data');
-// function test_order_data($order_id){
-// 	$order = wc_get_order( $order_id );
-//
-// 	$date_str = $order->date_created;
-// 	$time = strtotime( $date_str );
-// 	$date = date("Y-m-d", $time);
-//
-// 	echo "La fecha fue " . WC()->session->get("date");
-// }
+	echo "La tabla es" . $table;
+}
 
 // If admin requested export the log from admin panel
 add_action('cln_before_export_form','export_csv');
 function export_csv(){
 	global $wpdb;
 	if( isset( $_POST['export_csv'] ) ){
+		$from = $_POST['from'];
+		$to   = $_POST['to'];
+
 		ob_end_clean();
+		$table = $wpdb->prefix . "cln_discount_register";
 		$date = date("Y-m-d h:i:s");
-		$filename = 'cln_ordenes_dcto-';
-		$output = fopen('php://output', 'w');
-		$result = $wpdb->get_results('SELECT * FROM wp_cln_discount_register', ARRAY_A);
-		fputcsv( $output, array('Comercio', 'Fecha', 'Primeros 6', 'Siguientes 8', 'Ultimos 2', 'Monto', 'Descuento'));
+		$filename = 'cln_ordenes_dcto-' . $date;
+
+		$headings = ["Comercio", "Fecha", "", "Credencial", "", "Monto", "Descuento"];
+	  $subheadings = ["Nombre Comercio", "Fecha", "Primeros 6", "Siguientes 8", "Últimos 2", "MONTO($)", "%Descuento"];
+
+		$spreadsheet = new Spreadsheet();
+
+		// Set headings and subheadings
+	  $spreadsheet->getActiveSheet()->fromArray($headings, NULL, 'A1');
+	  $spreadsheet->getActiveSheet()->fromArray($subheadings, NULL, 'A2');
+
+		$sql = 'SELECT * FROM ' . $table . " WHERE fecha BETWEEN '{$from}' AND '{$to}' ";
+
+		$result = $wpdb->get_results($sql, ARRAY_A);
+		$count = 3;
 		foreach ( $result as $key => $value ) {
 			$modified_values = array(
 				$value['nombrecomercio'],
@@ -223,17 +236,111 @@ function export_csv(){
 				$value['monto'],
 				$value['descuento']
 			);
-			fputcsv( $output, $modified_values );
+			$spreadsheet->getActiveSheet()->fromArray($modified_values, NULL, 'A'.$count);
+	    $count++;
 		}
-		header("Pragma: public");
-		header("Expires: 0");
-		header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
-		header("Cache-Control: private", false);
-		header('Content-Type: text/csv; charset=utf-8');
-		// header("Content-Type: application/octet-stream");
-		header("Content-Disposition: attachment; filename=\"" . $filename . " " . $date . ".csv\";" );
-		// header('Content-Disposition: attachment; filename=lunchbox_orders.csv');
-		header("Content-Transfer-Encoding: binary");exit;
+
+		$styleArray = [
+	    'font' => [
+	      'bold' => true,
+	      'size' => 8,
+	      'name' => 'Arial',
+	      'color' => ['argb' => '00FFFFFF']
+	    ],
+	    'alignment' => [
+	      'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+	      'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+	    ],
+	    'borders' => [
+	      'top' => [
+	        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+	      ],
+	    ],
+	    'fill' => [
+	      'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+	      'startColor' => [
+	        'argb' => '5B9BD5',
+	      ],
+	    ],
+	  ];
+
+	  $styleArray_2 = [
+	    'font' => [
+	      'size' => 8,
+	      'name' => 'Arial',
+	      'color' => ['argb' => '00000000']
+	    ],
+	    'alignment' => [
+	      'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+	      'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+	    ],
+	    'borders' => [
+	      'allBorders' => [
+	        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+	        'color' => ['argb', '00000000']
+	      ],
+	    ],
+	    'fill' => [
+	      'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+	      'startColor' => [
+	        'argb' => 'e7e6e6',
+	      ],
+	    ],
+	  ];
+
+	  $styleArray_3 = [
+	    'font' => [
+	      'bold' => true,
+	      'size' => 8,
+	      'name' => 'Arial',
+	      'color' => ['argb' => '00000000']
+	    ],
+	    'alignment' => [
+	      'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+	      'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
+	    ],
+	    'borders' => [
+	      'vertical' => [
+	        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+	        'color' => ['argb', '00000000']
+	      ],
+	    ],
+	    'fill' => [
+	      'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+	      'startColor' => [
+	        'argb' => '00FFFFFF',
+	      ],
+	    ],
+	  ];
+
+	  // Styles from array
+	  $spreadsheet->getActiveSheet()->getStyle('A1:G1')->applyFromArray($styleArray);
+	  $spreadsheet->getActiveSheet()->getStyle('A2:G2')->applyFromArray($styleArray_2);
+	  $spreadsheet->getActiveSheet()->getStyle('A3:G500')->applyFromArray($styleArray_3);
+
+	  // Credenciales
+	  $spreadsheet->getActiveSheet()->getStyle('C2')->getFill()->getStartColor()->setARGB('f4b183');
+	  $spreadsheet->getActiveSheet()->getStyle('C2')->getFont()->getColor()->setARGB('00FFFFFF');
+
+	  $spreadsheet->getActiveSheet()->getStyle('D2')->getFill()->getStartColor()->setARGB('c55a11');
+	  $spreadsheet->getActiveSheet()->getStyle('D2')->getFont()->getColor()->setARGB('00FFFFFF');
+
+	  $spreadsheet->getActiveSheet()->getStyle('E2')->getFill()->getStartColor()->setARGB('843c0b');
+	  $spreadsheet->getActiveSheet()->getStyle('E2')->getFont()->getColor()->setARGB('00FFFFFF');
+
+	  $spreadsheet->getActiveSheet()->getCell('A1')->setValue('A1', $headings[0]);
+	  $spreadsheet->getActiveSheet()->getColumnDimension('A')->setWidth(14);
+	  $spreadsheet->getActiveSheet()->getColumnDimension('B')->setWidth(14);
+	  $spreadsheet->getActiveSheet()->getColumnDimension('C')->setWidth(12);
+	  $spreadsheet->getActiveSheet()->getColumnDimension('D')->setWidth(16);
+	  $spreadsheet->getActiveSheet()->getColumnDimension('G')->setWidth(12);
+
+		$writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+	  header('Content-Type: application/vnd.ms-excel');
+	  header('Content-Disposition: attachment;filename="'. $filename .'.xls"'); /*-- $filename is  xsl filename ---*/
+	  header('Cache-Control: max-age=0');
+	  $writer->save('php://output');
+		exit;
 	}
 }
 

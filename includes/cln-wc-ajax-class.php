@@ -52,8 +52,8 @@ class Custom_WC_AJAX extends WC_AJAX {
     public static function add_ajax_events() {
         // woocommerce_EVENT => nopriv
         $ajax_events = array(
-            'minicart_remove_item' => true,
-            'apply_cln' => true
+            'apply_cln' => true,
+            'cln_apply_coupon' => true
         );
         foreach ( $ajax_events as $ajax_event => $nopriv ) {
             add_action( 'wp_ajax_woocommerce_' . $ajax_event, array( __CLASS__, $ajax_event ) );
@@ -90,27 +90,41 @@ class Custom_WC_AJAX extends WC_AJAX {
     }
     /**
      */
-    public static function minicart_remove_item() {
-        $cart_key = $_POST['cart_key'];
-        if(!empty($cart_key)) {
-            if( WC()->cart->remove_cart_item( $cart_key ) ){
-                // Response
-                $new_fragments = self::get_refreshed_fragments_raw();
-                die(json_encode($new_fragments));
-            }
+
+    public static function cln_apply_coupon() {
+      check_ajax_referer( 'apply-coupon', 'security' );
+      if ( ! empty( $_POST['coupon_code'] ) ) {
+        $coupon       = new WC_Coupon( $_POST['coupon_code'] );
+        $discount     = WC()->cart->subtotal * $coupon->get_amount() * .01;
+        $cln_discount = WC()->cart->subtotal * get_option("cln_rate") * .01;
+
+        // If CLN discount is greater
+        if( $cln_discount > $discount ){
+          wc_add_notice( "Ya existe un descuento mayor aplicado", 'error' );
+        }else{
+          WC()->session->set("is_cln_member", 0);
+          WC()->session->set("cln_code", '');
+          WC()->cart->add_discount( sanitize_text_field( wp_unslash( $_POST['coupon_code'] ) ) );
         }
-        die("error!!!!");
+
+      } else {
+        wc_add_notice( WC_Coupon::get_generic_coupon_error( WC_Coupon::E_WC_COUPON_PLEASE_ENTER ), 'error' );
+      }
+      wc_print_notices();
+      wp_die();
     }
 
     public static function apply_cln() {
   		if ( ! empty( $_POST['cln_code'] ) ) {
 
   			$discount = WC()->cart->get_discount_total();
+        $cln_discount = WC()->cart->subtotal * get_option("cln_rate") * .01;
 
         // Si cuenta con algún descuento por cupón
-  			if( $discount != 0 ){
-  				wc_add_notice("Ya existe un descuento por cupón aplicado", 'error');
+  			if( $discount > $cln_discount ){
+  				wc_add_notice("Ya existe un mejor descuento por cupón aplicado ", 'error');
   			}else{
+          WC()->cart->remove_coupons();
           $ch = curl_init();
       		curl_setopt($ch, CURLOPT_URL, "https://sws.lanacion.com.ar/WCFUsuario/Usuario.svc/ObtenerUsuarioClub?nroCredencial=" . $_POST['cln_code'] . "&usr=RutaCacao&tkn=4bd7de26-2772-413c-abb4-e5de16fd66e2");
       		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
