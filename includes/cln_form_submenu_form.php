@@ -10,6 +10,6 @@
     <input type="text" name="to" class="date cln-csv-date-to" required readonly>
 
     <input type="hidden" name="export_csv" value="true">
-    <input type="submit" value="Exportar csv" style="cursor:pointer;" class="button">
+    <button type="submit" class="button">Exportar XLS</button>
   </form>
 </div>

@@ -38,11 +38,11 @@
     <tbody>
       <tr>
         <th><label for="title">Usuario</label></th>
-        <td><input type="text" name="cln_user" class="regular-text" id="cln_user"></td>
+        <td><input type="text" name="cln_user" class="regular-text" id="cln_user" value="<?= get_option("cln_user"); ?>"></td>
       </tr>
       <tr>
         <th><label for="title">Token</label></th>
-        <td><input type="text" name="cln_token" class="regular-text" id="cln_token"></td>
+        <td><input type="text" name="cln_token" class="regular-text" id="cln_token" value="<?= get_option("cln_token");  ?>"></td>
       </tr>
       <tr>
         <th></th>

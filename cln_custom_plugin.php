@@ -330,7 +330,6 @@ function export_csv(){
 	  $spreadsheet->getActiveSheet()->getStyle('E2')->getFill()->getStartColor()->setARGB('843c0b');
 	  $spreadsheet->getActiveSheet()->getStyle('E2')->getFont()->getColor()->setARGB('00FFFFFF');
 
-	  $spreadsheet->getActiveSheet()->getCell('A1')->setValue('A1', $headings[0]);
 	  $spreadsheet->getActiveSheet()->getColumnDimension('A')->setWidth(14);
 	  $spreadsheet->getActiveSheet()->getColumnDimension('B')->setWidth(14);
 	  $spreadsheet->getActiveSheet()->getColumnDimension('C')->setWidth(12);
