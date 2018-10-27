@@ -173,14 +173,13 @@ function create_order_csv( $order ) {
 
 		if($code){
 			$table_name = $wpdb->prefix . 'cln_discount_register';
-			$date  = new WC_DateTime();
-			$date_str = $date->date("Y-m-d");
+			$date  = current_time('Y-m-d');
 
 			$wpdb->insert(
 				$table_name,
 				[
 					"nombrecomercio" => $order->billing_first_name,
-					"fecha" => $date_str,
+					"fecha" => $date,
 					"primeros6" => substr( $code, 0, 6 ),
 					"siguientes8" => substr( $code, 6, 8 ),
 					"ultimos2" => substr( $code, 14),
