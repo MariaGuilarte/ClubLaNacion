@@ -15,9 +15,9 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
  * @package           Cln_custom_plugin
  *
  * @wordpress-plugin
- * Plugin Name:       Club De la Nación
+ * Plugin Name:       Club La Nación
  * Plugin URI:        cln_custom_plugin
- * Description:       Este es un plugin que aplica un descuento especial a los clientes pertenecientes al Club de La Nación
+ * Description:       Este es un plugin que aplica un descuento especial a los clientes pertenecientes al Club La Nación
  * Version:           1.0.0
  * Author:            Maria
  * Author URI:        https://espartadevs.website/portafolio
@@ -352,8 +352,8 @@ add_action('admin_menu', 'cln_admin_submenu_1');
 // Creación del Menus de administración
 function cln_admin_menu(){
   add_menu_page(
-    'Club de la nacion', //Titulo pagina
-    'Club de la Nación', //Titulo menu
+    'Club La nacion', //Titulo pagina
+    'Club La Nación', //Titulo menu
     'manage_options', //Capacidad
     'cln-admin-menu', //Slug
     'cln_form', //funcion
