@@ -105,12 +105,14 @@ function cln_create_db_table(){
 
     $sql = "CREATE TABLE $table_name (
       id mediumint(9) NOT NULL AUTO_INCREMENT,
+			order_id int,
 			nombrecomercio varchar(191),
       fecha date,
 			primeros6 varchar (191),
 			siguientes8 varchar (191),
 			ultimos2 varchar (191),
 			monto int,
+			status boolean,
 			descuento int,
       PRIMARY KEY  (id)
     ) $charset_collate;";
@@ -166,30 +168,68 @@ function apply_cln_discount($cart){
 }
 
 // Register the order with CLN discount if applied when order is created
-add_action('woocommerce_checkout_create_order', 'create_order_csv', 10, 1);
-function create_order_csv( $order ) {
+add_action('woocommerce_thankyou', 'create_order_csv', 10, 1);
+function create_order_csv( $order_id ) {
 		global $wpdb;
+		$order = wc_get_order($order_id);
 		$code = WC()->session->get('cln_code');
 
-		if($code){
+		if($code && $order->get_id() ){
 			$table_name = $wpdb->prefix . 'cln_discount_register';
 			$date  = current_time('Y-m-d');
+
+			$status = 0;
+			if( $order->get_status() == "processing" ){
+				$status = 1;
+			}
 
 			$wpdb->insert(
 				$table_name,
 				[
+					"order_id" => $order->get_id(),
 					"nombrecomercio" => $order->billing_first_name,
 					"fecha" => $date,
 					"primeros6" => substr( $code, 0, 6 ),
 					"siguientes8" => substr( $code, 6, 8 ),
 					"ultimos2" => substr( $code, 14),
 					"monto" => $order->get_subtotal(),
-					"descuento" =>get_option('cln_rate')
+					"descuento" => get_option('cln_rate'),
+					"status" => $status
 				]);
 
 			WC()->session->set('is_cln_member', 0);
 			WC()->session->set('cln_code', 0);
 		}
+}
+
+add_action( 'woocommerce_order_status_processing', 'cln_order_processing');
+function cln_order_processing($order_id){
+	global $wpdb;
+	$table = $wpdb->prefix . "cln_discount_register";
+	$wpdb->update(
+		$table,
+		[
+			"status" => 1,
+		],
+		[
+			"order_id" => $order_id
+		]
+	);
+}
+
+add_action( 'woocommerce_order_status_pending', 'cln_order_pending');
+function cln_order_pending($order_id){
+	global $wpdb;
+	$table = $wpdb->prefix . "cln_discount_register";
+	$wpdb->update(
+		$table,
+		[
+			"status" => 0,
+		],
+		[
+			"order_id" => $order_id
+		]
+	);
 }
 
 // add_action('woocommerce_thankyou', 'test_order_data');
@@ -198,12 +238,12 @@ function test_order_data($order_id){
 	$order = wc_get_order( $order_id );
 	$table = $wpdb->prefix . "cln_discount_register";
 
-	echo "La tabla es" . $table;
+	echo "ID DE LA ORDEN " . $order->get_id();
 }
 
-// If admin requested export the log from admin panel
-add_action('cln_before_export_form','export_csv');
-function export_csv(){
+// EXPORT EXCEL
+add_action('cln_before_export_form','export_xls');
+function export_xls(){
 	global $wpdb;
 	if( isset( $_POST['export_csv'] ) ){
 		$from = $_POST['from'];
@@ -223,7 +263,7 @@ function export_csv(){
 	  $spreadsheet->getActiveSheet()->fromArray($headings, NULL, 'A1');
 	  $spreadsheet->getActiveSheet()->fromArray($subheadings, NULL, 'A2');
 
-		$sql = 'SELECT * FROM ' . $table . " WHERE fecha BETWEEN '{$from}' AND '{$to}' ";
+		$sql = 'SELECT * FROM ' . $table . " WHERE fecha BETWEEN '{$from}' AND '{$to}' AND status = 1";
 
 		$result = $wpdb->get_results($sql, ARRAY_A);
 		$count = 3;
