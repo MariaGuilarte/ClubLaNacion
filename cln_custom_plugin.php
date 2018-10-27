@@ -161,7 +161,7 @@ add_action('woocommerce_cart_calculate_fees', 'apply_cln_discount');
 function apply_cln_discount($cart){
   if( WC()->session->get('is_cln_member') ){
     $discount = WC()->cart->subtotal * get_option('cln_rate') * .01;
-    $cart->add_fee('Dto. Club La Naci', -$discount);
+    $cart->add_fee('Dto. Club La Nación', -$discount);
   }
 }
 
