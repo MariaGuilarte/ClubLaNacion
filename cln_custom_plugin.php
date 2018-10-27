@@ -202,33 +202,23 @@ function create_order_csv( $order_id ) {
 		}
 }
 
-add_action( 'woocommerce_order_status_processing', 'cln_order_processing');
-function cln_order_processing($order_id){
-	global $wpdb;
-	$table = $wpdb->prefix . "cln_discount_register";
-	$wpdb->update(
-		$table,
-		[
-			"status" => 1,
-		],
-		[
-			"order_id" => $order_id
-		]
-	);
-}
+add_action( 'woocommerce_order_status_processing', 'cln_order_status_changed');
+add_action( 'woocommerce_order_status_completed', 'cln_order_status_changed');
+add_action( 'woocommerce_order_status_pending', 'cln_order_status_changed');
+add_action( 'woocommerce_order_status_failed',  'cln_order_status_changed');
+add_action( 'woocommerce_order_status_on-hold', 'cln_order_status_changed');
+add_action( 'woocommerce_order_status_refunded', 'cln_order_status_changed');
+add_action( 'woocommerce_order_status_cancelled', 'cln_order_status_changed');
 
-add_action( 'woocommerce_order_status_pending', 'cln_order_pending');
-function cln_order_pending($order_id){
+function cln_order_status_changed($order_id){
 	global $wpdb;
+	$order = wc_get_order($order_id);
+	$status_str = $order->get_status();
+	$status = ( ( $status_str == 'processing' ) || ( $status_str == 'completed' ) ) ? 1 : 0;
+
 	$table = $wpdb->prefix . "cln_discount_register";
 	$wpdb->update(
-		$table,
-		[
-			"status" => 0,
-		],
-		[
-			"order_id" => $order_id
-		]
+		$table, ["status" => $status], ["order_id" => $order_id]
 	);
 }
 
