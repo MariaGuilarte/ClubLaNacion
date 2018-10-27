@@ -94,7 +94,7 @@ class Custom_WC_AJAX extends WC_AJAX {
      public static function remove_cln() {
        WC()->session->set("is_cln_member", 0);
        WC()->session->set("cln_code", '');
-       wc_add_notice( "Se ha removido el descuento por membresia del Club de la Nación", 'success' );
+       wc_add_notice( "Se ha removido el descuento por membresia del Club La Nación", 'success' );
 
        wc_print_notices();
        wp_die();
@@ -166,11 +166,11 @@ class Custom_WC_AJAX extends WC_AJAX {
       		if( isset( $res->RTA ) && $res->RTA == 0 ){
             WC()->session->set('is_cln_member', 1);
             WC()->session->set('cln_code', $_POST['cln_code']);
-    				wc_add_notice( 'Se aplicó descuento para miembro del Club de la Nación', 'success');
+    				wc_add_notice( 'Se aplicó descuento para miembro del Club La Nación', 'success');
           }else{
             WC()->session->set('is_cln_member', 0);
             WC()->session->set('cln_code', '');
-            $message = isset( $res->RTA ) ? 'La credencial no pertenece a ningún miembro del Club de la Nación' : "No hay conexión con servicios del Club de la Nación";
+            $message = isset( $res->RTA ) ? 'La credencial no pertenece a ningún miembro del Club La Nación' : "No hay conexión con servicios del Club La Nación";
             wc_add_notice( $message, 'error' );
           }
         }

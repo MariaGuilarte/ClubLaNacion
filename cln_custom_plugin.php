@@ -161,7 +161,7 @@ add_action('woocommerce_cart_calculate_fees', 'apply_cln_discount');
 function apply_cln_discount($cart){
   if( WC()->session->get('is_cln_member') ){
     $discount = WC()->cart->subtotal * get_option('cln_rate') * .01;
-    $cart->add_fee('DescuentoCLN', -$discount);
+    $cart->add_fee('Dto. Club La Naci', -$discount);
   }
 }
 
@@ -193,7 +193,7 @@ function create_order_csv( $order ) {
 		}
 }
 
-add_action('woocommerce_thankyou', 'test_order_data');
+// add_action('woocommerce_thankyou', 'test_order_data');
 function test_order_data($order_id){
 	global $wpdb;
 	$order = wc_get_order( $order_id );
@@ -230,7 +230,7 @@ function export_csv(){
 		$count = 3;
 		foreach ( $result as $key => $value ) {
 			$modified_values = array(
-				$value['nombrecomercio'],
+				"RutaCacao",
 				$value['fecha'],
 				$value['primeros6'],
 				$value['siguientes8'],
